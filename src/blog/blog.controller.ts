@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
@@ -10,19 +11,20 @@ import { UpdateBlogDto } from './dto/update-blog.dto';
 export class BlogController {
   constructor(private readonly blogService: BlogService) { }
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   @ApiOperation({ summary: 'Create a new blog post' })
   @ApiResponse({ status: 201, description: 'The blog post has been successfully created.', type: Blog })
   @ApiResponse({ status: 400, description: 'Bad Request' })
-  create(@Body() createBlogDto: CreateBlogDto) {
-    return this.blogService.create(createBlogDto);
+  create(@Body() createBlogDto: CreateBlogDto, @Request() req) {
+    return this.blogService.create(createBlogDto, req.user.userId);
   }
 
   @Get()
   @ApiOperation({ summary: 'Get all blog posts' })
   @ApiResponse({ status: 200, description: 'Return all blog posts.', type: Blog })
-  findAll() {
-    return this.blogService.findAll();
+  findAll(@Query('page') page: number, @Query('limit') limit: number) {
+    return this.blogService.findAll(page, limit);
   }
 
   @Get(':id')
@@ -32,6 +34,22 @@ export class BlogController {
   @ApiResponse({ status: 404, description: 'Blog post not found.' })
   findOne(@Param('id') id: string) {
     return this.blogService.findOne(id);
+  }
+
+  @Get('tag/:tag')
+  @ApiOperation({ summary: 'Get blog posts by tag' })
+  @ApiParam({ name: 'tag', required: true, description: 'The tag of the blog posts' })
+  @ApiResponse({ status: 200, description: 'Return the blog posts with the specified tag.', type: Blog })
+  findByTag(@Param('tag') tag: string) {
+    return this.blogService.findByTag(tag);
+  }
+
+  @Get('user/:userId')
+  @ApiOperation({ summary: 'Get blog posts by user' })
+  @ApiParam({ name: 'userId', required: true, description: 'The id of the user' })
+  @ApiResponse({ status: 200, description: 'Return the blog posts of the specified user.', type: Blog })
+  findByUser(@Param('userId') userId: string) {
+    return this.blogService.findByUser(userId);
   }
 
   @Patch(':id')
