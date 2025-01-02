@@ -20,9 +20,13 @@ export class CommentsService {
     return newComment.save();
   }
 
+  //Update Example
   async updateComment(comment: Comment, updateCommentDto: UpdateCommentDto): Promise<Comment> {
-    return this.commentModel.findByIdAndUpdate(comment._id, updateCommentDto, { new: true }).exec();
+    const updatedComment = await this.commentModel.findByIdAndUpdate(comment._id, updateCommentDto, { new: true }).exec(); // Use exec() to return a promise
+
+    return updatedComment;
   }
+
 
   async deleteComment(comment: Comment): Promise<Comment> {
     return this.commentModel.findByIdAndDelete(comment._id).exec();
@@ -33,6 +37,6 @@ export class CommentsService {
   }
 
   async findAllComments(): Promise<Comment[]> {
-    return this.commentModel.find().exec();
+    return this.commentModel.find().populate('commenter').exec();
   }
 }

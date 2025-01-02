@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request, Patch, Delete, UnauthorizedException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Request, Patch, Delete, UnauthorizedException, NotFoundException } from '@nestjs/common';
 import { Comment } from './entities/comment.entity';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
@@ -43,7 +43,7 @@ export class CommentsController {
     return this.commentsService.addComment(blogId, commenterId, content);
   }
 
-  @Get()  // GET request to /comments
+  @Get()
   @ApiOperation({ summary: 'Get all comments' })
   @ApiResponse({ status: 200, description: 'Returns an array of all comments', type: [Comment] }) // Update Swagger docs
   async findAllComments(): Promise<Comment[]> {
@@ -79,6 +79,10 @@ export class CommentsController {
   ) {
     const comment = await this.commentsService.findCommentById(commentId);
 
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
+
     // Authorization check (if using OptionalJwtAuthGuard):
     if (comment.commenter && comment.commenter.toString() !== req.user.userId) {
       // Or handle as needed.
@@ -107,6 +111,10 @@ export class CommentsController {
     @Request() req
   ) {
     const comment = await this.commentsService.findCommentById(commentId);
+
+    if (!comment) {
+      throw new NotFoundException('Comment not found');
+    }
 
     // Authorization check (if using OptionalJwtAuthGuard):
     if (comment.commenter && comment.commenter.toString() !== req.user.userId) {

@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -13,6 +13,7 @@ export class BlogController {
 
   @UseGuards(JwtAuthGuard)
   @Post()
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new blog post' })
   @ApiResponse({ status: 201, description: 'The blog post has been successfully created.', type: Blog })
   @ApiResponse({ status: 400, description: 'Bad Request' })
@@ -52,7 +53,9 @@ export class BlogController {
     return this.blogService.findByUser(userId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a blog post' })
   @ApiParam({ name: 'id', required: true, description: 'The id of the blog post to update' })
   @ApiResponse({ status: 200, description: 'The blog post has been successfully updated.', type: Blog })
@@ -63,7 +66,9 @@ export class BlogController {
   }
 
 
+  @UseGuards(JwtAuthGuard)
   @Delete(':id')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a blog post' })
   @ApiParam({ name: 'id', required: true, description: 'The id of the blog post to delete' })
   @ApiResponse({ status: 200, description: 'The blog post has been successfully deleted.', type: Blog })

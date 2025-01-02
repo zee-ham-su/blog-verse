@@ -13,11 +13,13 @@ export class BlogService {
 
   // Create a new blog
   async create(createBlogDto: CreateBlogDto, userId: string): Promise<Blog> {
+    console.log(userId);
     const newBlog = new this.blogModel({
       ...createBlogDto,
       author: userId,
     });
     return newBlog.save();
+
   }
 
   // Find all blogs
