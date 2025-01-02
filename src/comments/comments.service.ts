@@ -10,11 +10,12 @@ import { Comment } from './entities/comment.entity';
 export class CommentsService {
   constructor(@InjectModel(Comment.name) private commentModel: Model<Comment>) { }
 
-  async addComment(blogId: string, userId: string, content: string): Promise<Comment> {
+  async addComment(blogId: string, commenterId: string | null, content: string): Promise<Comment> {
     const newComment = new this.commentModel({
       blog: blogId,
-      author: userId,
+      commenter: commenterId, // `null` for anonymous comments
       content,
+      isAnonymous: !commenterId, // Set `isAnonymous` to `true` if `commenterId` is `null`
     });
     return newComment.save();
   }
@@ -25,5 +26,13 @@ export class CommentsService {
 
   async deleteComment(comment: Comment): Promise<Comment> {
     return this.commentModel.findByIdAndDelete(comment._id).exec();
+  }
+
+  async findCommentById(commentId: string): Promise<Comment> {
+    return this.commentModel.findById(commentId).exec();
+  }
+
+  async findAllComments(): Promise<Comment[]> {
+    return this.commentModel.find().exec();
   }
 }

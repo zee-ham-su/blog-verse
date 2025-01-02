@@ -13,8 +13,8 @@ export class CreateCommentDto {
     @IsNotEmpty()
     blog: string;
 
-    @ApiProperty({ description: 'The id of the author', example: '60f7b3b3b3b3b3b3b3b3b3' })
+    @ApiProperty({ description: 'The id of the user who made the comment', example: '60f7b3b3b3b3b3b3b3b3b3' })
     @IsString()
     @IsNotEmpty()
-    author: string;
+    commenter: string;
 }
