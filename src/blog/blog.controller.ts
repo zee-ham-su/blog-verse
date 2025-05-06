@@ -126,4 +126,20 @@ export class BlogController {
   remove(@Param('id') id: string) {
     return this.blogService.remove(id);
   }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'author')
+  @Delete(':id/media/:filename')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a specific media file from a blog post' })
+  @ApiParam({ name: 'id', required: true, description: 'The id of the blog post' })
+  @ApiParam({ name: 'filename', required: true, description: 'The filename of the media to delete' })
+  @ApiResponse({ status: 200, description: 'The media file has been successfully deleted', type: Blog })
+  @ApiResponse({ status: 404, description: 'Blog post or media file not found' })
+  deleteMediaFile(
+    @Param('id') id: string,
+    @Param('filename') filename: string,
+  ) {
+    return this.blogService.deleteMediaFile(id, filename);
+  }
 }

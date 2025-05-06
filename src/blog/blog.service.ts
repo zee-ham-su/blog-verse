@@ -7,6 +7,8 @@ import { UpdateBlogDto } from './dto/update-blog.dto';
 import { slugify } from 'src/utils/slugify';
 import { ConfigService } from '@nestjs/config';
 import { AppConfig } from 'src/utils/app.config';
+import { promises as fs } from 'fs';
+import { join } from 'path';
 
 @Injectable()
 export class BlogService {
@@ -153,7 +155,52 @@ export class BlogService {
     return this.transformBlogMedia(updatedBlog);
   }
 
-  // Delete a blog by ID
+  // Helper method to delete a file
+  private async deleteFile(filePath: string): Promise<void> {
+    try {
+      // Extract the filename from the path
+      const filename = filePath.split('/').pop();
+      const fullPath = join(process.cwd(), 'uploads', filename);
+      
+      // Check if file exists before attempting to delete
+      await fs.access(fullPath);
+      await fs.unlink(fullPath);
+      console.log(`Successfully deleted file: ${fullPath}`);
+    } catch (error) {
+      // Just log the error but don't throw - we don't want to stop the blog deletion if file deletion fails
+      console.error(`Error deleting file ${filePath}:`, error.message);
+    }
+  }
+
+  // Delete a specific media file from a blog post
+  async deleteMediaFile(id: string, filename: string): Promise<any> {
+    // Find the blog
+    const blog = await this.blogModel.findById(id);
+    
+    if (!blog) {
+      throw new NotFoundException(`Blog with ID "${id}" not found`);
+    }
+    
+    // Check if the blog has the media file
+    const mediaPath = `uploads/${filename}`;
+    const mediaIndex = blog.media ? blog.media.findIndex(m => m === mediaPath) : -1;
+    
+    if (mediaIndex === -1) {
+      throw new NotFoundException(`Media file "${filename}" not found in this blog post`);
+    }
+    
+    // Delete the file from the filesystem
+    await this.deleteFile(mediaPath);
+    
+    // Remove the file from the blog's media array
+    blog.media.splice(mediaIndex, 1);
+    await blog.save();
+    
+    // Return the updated blog with populated fields and transformed media URLs
+    return this.findOne(id);
+  }
+
+  // Delete a blog by ID and its associated files
   async remove(id: string): Promise<any> {
     const deletedBlog = await this.blogModel.findByIdAndDelete(id)
       .populate('author', 'username email -_id')
@@ -161,6 +208,12 @@ export class BlogService {
       
     if (!deletedBlog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
+    }
+    
+    // Delete all associated media files
+    if (deletedBlog.media && deletedBlog.media.length > 0) {
+      const deletePromises = deletedBlog.media.map(filePath => this.deleteFile(filePath));
+      await Promise.all(deletePromises);
     }
     
     return this.transformBlogMedia(deletedBlog);
