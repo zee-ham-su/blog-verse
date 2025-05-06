@@ -4,6 +4,7 @@ import { Model } from 'mongoose';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { slugify } from 'src/utils/slugify';
 
 @Injectable()
 export class BlogService {
@@ -14,12 +15,24 @@ export class BlogService {
   // Create a new blog
   async create(createBlogDto: CreateBlogDto, userId: string): Promise<Blog> {
     console.log(userId);
+
+    // Generate slug from title if not provided
+    let slug = createBlogDto.slug || slugify(createBlogDto.title);
+
+    // Ensure slug is unique
+    let uniqueSlug = slug;
+    let count = 1;
+    while (await this.blogModel.exists({ slug: uniqueSlug })) {
+      uniqueSlug = `${slug}-${count}`;
+      count++;
+    }
+
     const newBlog = new this.blogModel({
       ...createBlogDto,
+      slug: uniqueSlug,
       author: userId,
     });
     return newBlog.save();
-
   }
 
   // Find all blogs
@@ -45,6 +58,15 @@ export class BlogService {
     const blog = await this.blogModel.findById(id).exec();
     if (!blog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
+    }
+    return blog;
+  }
+
+  // Find a blog by slug
+  async findBySlug(slug: string): Promise<Blog> {
+    const blog = await this.blogModel.findOne({ slug }).exec();
+    if (!blog) {
+      throw new NotFoundException(`Blog with slug "${slug}" not found`);
     }
     return blog;
   }

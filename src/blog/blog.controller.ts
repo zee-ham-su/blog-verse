@@ -56,6 +56,15 @@ export class BlogController {
     return this.blogService.findByUser(userId);
   }
 
+  @Get('slug/:slug')
+  @ApiOperation({ summary: 'Get a blog by slug' })
+  @ApiParam({ name: 'slug', required: true, description: 'The slug of the blog' })
+  @ApiResponse({ status: 200, description: 'Return the blog.', type: Blog })
+  @ApiResponse({ status: 404, description: 'Blog not found.' })
+  findBySlug(@Param('slug') slug: string) {
+    return this.blogService.findBySlug(slug);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin', 'author')
   @Patch(':id')

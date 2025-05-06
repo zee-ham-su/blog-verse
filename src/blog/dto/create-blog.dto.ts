@@ -22,4 +22,9 @@ export class CreateBlogDto {
     @IsString({ each: true })
     @IsOptional()
     readonly tags?: string[];
+
+    @ApiProperty({ description: 'The slug of the blog', example: 'my-first-blog' })
+    @IsString()
+    @IsNotEmpty()
+    readonly slug: string;
 }

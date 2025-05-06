@@ -16,6 +16,9 @@ export class Blog extends Document {
 
     @Prop({ default: [] })
     tags: string[];
+
+    @Prop({ required: true, unique: true })
+    slug: string;
 }
 
 

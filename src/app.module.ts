@@ -8,6 +8,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { CommentsModule } from './comments/comments.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule } from '@nestjs/throttler';
 
 @Module({
   imports: [
@@ -34,6 +35,10 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
     UserModule,
     AuthModule,
     CommentsModule,
+    ThrottlerModule.forRoot({
+      ttl: 60, // Time-to-live in seconds
+      limit: 10, // Maximum number of requests per TTL
+    }),
   ],
   providers: [
     {
