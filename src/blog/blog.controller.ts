@@ -1,8 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards, UseInterceptors, UploadedFiles, BadRequestException } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
@@ -33,14 +33,31 @@ export class BlogController {
   @ApiOperation({ summary: 'Upload media files to a blog post' })
   @ApiConsumes('multipart/form-data')
   @ApiParam({ name: 'id', required: true, description: 'The id of the blog post' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        files: {
+          type: 'array',
+          items: {
+            type: 'string',
+            format: 'binary',
+          },
+        },
+      },
+    },
+  })
   @ApiResponse({ status: 200, description: 'Files uploaded successfully', type: Blog })
   @ApiResponse({ status: 400, description: 'Bad Request: Invalid file format or size' })
   @ApiResponse({ status: 404, description: 'Blog post not found' })
   @UseInterceptors(FilesInterceptor('files', 10, multerConfig))
-  uploadFiles(
+  async uploadFiles(
     @Param('id') id: string,
     @UploadedFiles() files: Express.Multer.File[],
   ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('No files uploaded. Please provide files using the "files" field in form-data.');
+    }
     return this.blogService.uploadFiles(id, files);
   }
 

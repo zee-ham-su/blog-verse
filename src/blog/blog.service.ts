@@ -38,24 +38,34 @@ export class BlogService {
   // Find all blogs
   async findAll(page: number = 1, limit: number = 10): Promise<Blog[]> {
     const skip = (page - 1) * limit;
-    return this.blogModel.find().skip(skip).limit(limit).exec();
+    return this.blogModel.find()
+      .skip(skip)
+      .limit(limit)
+      .populate('author', 'username email -_id') // Populate author with username and email, exclude _id
+      .exec();
   }
 
 
   // Find a blog by tag
   async findByTag(tag: string): Promise<Blog[]> {
-    return this.blogModel.find({ tags: tag }).exec();
+    return this.blogModel.find({ tags: tag })
+      .populate('author', 'username email -_id')
+      .exec();
   }
 
 
   // Find a blog by a user
   async findByUser(userId: string): Promise<Blog[]> {
-    return this.blogModel.find({ author: userId }).exec();
+    return this.blogModel.find({ author: userId })
+      .populate('author', 'username email -_id')
+      .exec();
   }
 
   // Find a blog by ID
   async findOne(id: string): Promise<Blog> {
-    const blog = await this.blogModel.findById(id).exec();
+    const blog = await this.blogModel.findById(id)
+      .populate('author', 'username email -_id')
+      .exec();
     if (!blog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
     }
@@ -64,7 +74,9 @@ export class BlogService {
 
   // Find a blog by slug
   async findBySlug(slug: string): Promise<Blog> {
-    const blog = await this.blogModel.findOne({ slug }).exec();
+    const blog = await this.blogModel.findOne({ slug })
+      .populate('author', 'username email -_id')
+      .exec();
     if (!blog) {
       throw new NotFoundException(`Blog with slug "${slug}" not found`);
     }
@@ -74,6 +86,11 @@ export class BlogService {
   // Upload files to a blog post
   async uploadFiles(id: string, files: Express.Multer.File[]): Promise<Blog> {
     const blog = await this.findOne(id);
+    
+    // Check if files exist and is not empty
+    if (!files || files.length === 0) {
+      return blog; // Return the blog without making changes if no files
+    }
     
     // Get the file paths
     const filePaths = files.map(file => `uploads/${file.filename}`);
@@ -88,6 +105,7 @@ export class BlogService {
   async update(id: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
     const updatedBlog = await this.blogModel
       .findByIdAndUpdate(id, updateBlogDto, { new: true, runValidators: true })
+      .populate('author', 'username email -_id')
       .exec();
     if (!updatedBlog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
@@ -97,7 +115,9 @@ export class BlogService {
 
   // Delete a blog by ID
   async remove(id: string): Promise<Blog> {
-    const deletedBlog = await this.blogModel.findByIdAndDelete(id).exec();
+    const deletedBlog = await this.blogModel.findByIdAndDelete(id)
+      .populate('author', 'username email -_id')
+      .exec();
     if (!deletedBlog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
     }
