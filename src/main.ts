@@ -19,7 +19,7 @@ async function bootstrap() {
     .build();
 
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  SwaggerModule.setup('api/docs', app, document);
 
   // Validation pipe
   app.useGlobalPipes(new ValidationPipe());
@@ -30,6 +30,6 @@ async function bootstrap() {
   console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
   await app.listen(3000);
-  console.log('Server is running on port 🚀', 'http://localhost:3000');
+  console.log('Server is running on port 🚀', 'http://localhost:3000/api/docs');
 }
 bootstrap();
