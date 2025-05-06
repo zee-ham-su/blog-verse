@@ -71,6 +71,19 @@ export class BlogService {
     return blog;
   }
 
+  // Upload files to a blog post
+  async uploadFiles(id: string, files: Express.Multer.File[]): Promise<Blog> {
+    const blog = await this.findOne(id);
+    
+    // Get the file paths
+    const filePaths = files.map(file => `uploads/${file.filename}`);
+    
+    // Update the blog with new media files
+    blog.media = blog.media ? [...blog.media, ...filePaths] : filePaths;
+    
+    return blog.save();
+  }
+
   // Update a blog by ID
   async update(id: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
     const updatedBlog = await this.blogModel

@@ -1,12 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards, UseInterceptors, UploadedFiles } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { multerConfig } from '../utils/multer.config';
 
 @ApiTags('blog')
 @Controller('blogs')
@@ -22,6 +24,24 @@ export class BlogController {
   @ApiResponse({ status: 400, description: 'Bad Request: Invalid input data' })
   create(@Body() createBlogDto: CreateBlogDto, @Request() req) {
     return this.blogService.create(createBlogDto, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'author')
+  @Post(':id/upload')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload media files to a blog post' })
+  @ApiConsumes('multipart/form-data')
+  @ApiParam({ name: 'id', required: true, description: 'The id of the blog post' })
+  @ApiResponse({ status: 200, description: 'Files uploaded successfully', type: Blog })
+  @ApiResponse({ status: 400, description: 'Bad Request: Invalid file format or size' })
+  @ApiResponse({ status: 404, description: 'Blog post not found' })
+  @UseInterceptors(FilesInterceptor('files', 10, multerConfig))
+  uploadFiles(
+    @Param('id') id: string,
+    @UploadedFiles() files: Express.Multer.File[],
+  ) {
+    return this.blogService.uploadFiles(id, files);
   }
 
   @Get()

@@ -19,6 +19,9 @@ export class Blog extends Document {
 
     @Prop({ required: true, unique: true })
     slug: string;
+
+    @Prop({ type: [String], default: [] })
+    media?: string[];
 }
 
 

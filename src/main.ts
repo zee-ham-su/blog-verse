@@ -41,7 +41,9 @@ async function bootstrap() {
 
   console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
-  await app.listen(3000);
-  console.log('Server is running on port 🚀', 'http://localhost:3000/api/docs');
+  // Get port from environment variable or use 3001 as default
+  const port = configService.get<number>('PORT') || 3001;
+  await app.listen(port);
+  console.log(`Server is running on port 🚀 http://localhost:${port}/api/docs`);
 }
 bootstrap();
