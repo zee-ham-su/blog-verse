@@ -8,5 +8,6 @@ import { Blog, BlogSchema } from './entities/blog.entity';
   imports: [MongooseModule.forFeature([{ name: Blog.name, schema: BlogSchema }])],
   controllers: [BlogController],
   providers: [BlogService],
+  exports: [MongooseModule],
 })
 export class BlogModule { }

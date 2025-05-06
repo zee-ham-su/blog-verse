@@ -1,14 +1,17 @@
 import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
-
+import { AuthEntity } from './entities/auth.entity';
 
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) { }
 
-
+  @ApiTags('auth')
+  @ApiOperation({ summary: 'Authenticate a user' })
+  @ApiResponse({ status: 200, description: 'User authenticated successfully', type: AuthEntity })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiOperation({ summary: 'Login' })
   @ApiResponse({ status: 200, description: 'Login successful' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })

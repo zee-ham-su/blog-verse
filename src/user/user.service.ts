@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { User } from './entities/user.entity';
@@ -52,7 +52,6 @@ export class UserService {
     return this.userModel.findOne({ email }).exec();
   }
 
-
   // Validate a user
   async validateUser(email: string, password: string): Promise<User> {
     const user = await this.userModel.findOne({ email }).exec();
@@ -63,7 +62,12 @@ export class UserService {
   }
 
   // Update a user
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
+  async update(id: string, updateUserDto: UpdateUserDto, currentUserId: string, currentUserRole: string): Promise<User> {
+    // Allow update only if the user is updating their own details or if the user is an admin
+    if (id !== currentUserId && currentUserRole !== 'admin') {
+      throw new ForbiddenException('You are not authorized to update this user.');
+    }
+
     let hashedPassword: string;
     if (updateUserDto.password) {
       const salt = await bcrypt.genSalt(10);

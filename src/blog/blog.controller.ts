@@ -1,22 +1,25 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Request, Query, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Roles } from '../auth/roles.decorator';
+import { RolesGuard } from '../auth/roles.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBearerAuth } from '@nestjs/swagger';
 import { BlogService } from './blog.service';
 import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 
-@ApiTags('blogs')
+@ApiTags('blog')
 @Controller('blogs')
 export class BlogController {
   constructor(private readonly blogService: BlogService) { }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'author')
   @Post()
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new blog post' })
-  @ApiResponse({ status: 201, description: 'The blog post has been successfully created.', type: Blog })
-  @ApiResponse({ status: 400, description: 'Bad Request' })
+  @ApiResponse({ status: 201, description: 'Blog post created successfully', type: Blog })
+  @ApiResponse({ status: 400, description: 'Bad Request: Invalid input data' })
   create(@Body() createBlogDto: CreateBlogDto, @Request() req) {
     return this.blogService.create(createBlogDto, req.user.userId);
   }
@@ -53,7 +56,8 @@ export class BlogController {
     return this.blogService.findByUser(userId);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'author')
   @Patch(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a blog post' })
@@ -65,8 +69,8 @@ export class BlogController {
     return this.blogService.update(id, updateBlogDto);
   }
 
-
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'author')
   @Delete(':id')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a blog post' })

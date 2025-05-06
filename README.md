@@ -22,6 +22,88 @@
   <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
   [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
+# Blog API
+
+## Setup Instructions
+
+1. Clone the repository:
+   ```bash
+   git clone <repository-url>
+   ```
+
+2. Navigate to the project directory:
+   ```bash
+   cd blog-verse
+   ```
+
+3. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+4. Set up environment variables:
+   - Create a `.env` file in the root directory.
+   - Add the following variables:
+     ```env
+     MONGODB_URI=<your-mongodb-uri>
+     JWT_SECRET=<your-jwt-secret>
+     ```
+
+5. Start the development server:
+   ```bash
+   npm run start:dev
+   ```
+
+## API Usage Examples
+
+### Authentication
+- **Login**:
+  ```bash
+  POST /auth/login
+  {
+    "email": "user@example.com",
+    "password": "password123"
+  }
+  ```
+
+### Blogs
+- **Create a Blog**:
+  ```bash
+  POST /blog
+  {
+    "title": "My First Blog",
+    "content": "This is the content of the blog.",
+    "tags": ["nestjs", "blog"]
+  }
+  ```
+
+### Comments
+- **Add a Comment**:
+  ```bash
+  POST /comments
+  {
+    "blogId": "<blog-id>",
+    "content": "This is a comment."
+  }
+  ```
+
+## Contribution Guidelines
+
+1. Fork the repository.
+2. Create a new branch for your feature or bugfix:
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
+3. Commit your changes:
+   ```bash
+   git commit -m "Add your commit message"
+   ```
+4. Push to your branch:
+   ```bash
+   git push origin feature/your-feature-name
+   ```
+5. Open a pull request.
+
 ## Description
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
