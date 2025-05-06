@@ -5,11 +5,14 @@ import { Blog } from './entities/blog.entity';
 import { CreateBlogDto } from './dto/create-blog.dto';
 import { UpdateBlogDto } from './dto/update-blog.dto';
 import { slugify } from 'src/utils/slugify';
+import { ConfigService } from '@nestjs/config';
+import { AppConfig } from 'src/utils/app.config';
 
 @Injectable()
 export class BlogService {
   constructor(
     @InjectModel(Blog.name) private readonly blogModel: Model<Blog>,
+    private configService: ConfigService,
   ) { }
 
   // Create a new blog
@@ -35,92 +38,131 @@ export class BlogService {
     return newBlog.save();
   }
 
+  // Helper method to transform blog data with full URLs
+  private transformBlogMedia(blog: Blog): any {
+    const transformed = blog.toObject ? blog.toObject() : { ...blog };
+    
+    if (transformed.media && Array.isArray(transformed.media)) {
+      transformed.media = transformed.media.map(path => 
+        AppConfig.getFileUrl(this.configService, path)
+      );
+    }
+    
+    return transformed;
+  }
+
+  // Helper to transform an array of blogs
+  private transformBlogsMedia(blogs: Blog[]): any[] {
+    return blogs.map(blog => this.transformBlogMedia(blog));
+  }
+
   // Find all blogs
-  async findAll(page: number = 1, limit: number = 10): Promise<Blog[]> {
+  async findAll(page: number = 1, limit: number = 10): Promise<any[]> {
     const skip = (page - 1) * limit;
-    return this.blogModel.find()
+    const blogs = await this.blogModel.find()
       .skip(skip)
       .limit(limit)
-      .populate('author', 'username email -_id') // Populate author with username and email, exclude _id
+      .populate('author', 'username email -_id')
       .exec();
+      
+    return this.transformBlogsMedia(blogs);
   }
-
 
   // Find a blog by tag
-  async findByTag(tag: string): Promise<Blog[]> {
-    return this.blogModel.find({ tags: tag })
+  async findByTag(tag: string): Promise<any[]> {
+    const blogs = await this.blogModel.find({ tags: tag })
       .populate('author', 'username email -_id')
       .exec();
+      
+    return this.transformBlogsMedia(blogs);
   }
 
-
   // Find a blog by a user
-  async findByUser(userId: string): Promise<Blog[]> {
-    return this.blogModel.find({ author: userId })
+  async findByUser(userId: string): Promise<any[]> {
+    const blogs = await this.blogModel.find({ author: userId })
       .populate('author', 'username email -_id')
       .exec();
+      
+    return this.transformBlogsMedia(blogs);
   }
 
   // Find a blog by ID
-  async findOne(id: string): Promise<Blog> {
+  async findOne(id: string): Promise<any> {
     const blog = await this.blogModel.findById(id)
       .populate('author', 'username email -_id')
       .exec();
+      
     if (!blog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
     }
-    return blog;
+    
+    return this.transformBlogMedia(blog);
   }
 
   // Find a blog by slug
-  async findBySlug(slug: string): Promise<Blog> {
+  async findBySlug(slug: string): Promise<any> {
     const blog = await this.blogModel.findOne({ slug })
       .populate('author', 'username email -_id')
       .exec();
+      
     if (!blog) {
       throw new NotFoundException(`Blog with slug "${slug}" not found`);
     }
-    return blog;
+    
+    return this.transformBlogMedia(blog);
   }
 
   // Upload files to a blog post
-  async uploadFiles(id: string, files: Express.Multer.File[]): Promise<Blog> {
-    const blog = await this.findOne(id);
+  async uploadFiles(id: string, files: Express.Multer.File[]): Promise<any> {
+    // Get the original document first
+    const blogDoc = await this.blogModel.findById(id);
+    
+    if (!blogDoc) {
+      throw new NotFoundException(`Blog with ID "${id}" not found`);
+    }
     
     // Check if files exist and is not empty
     if (!files || files.length === 0) {
-      return blog; // Return the blog without making changes if no files
+      return this.findOne(id); // Return the blog without making changes if no files
     }
     
     // Get the file paths
     const filePaths = files.map(file => `uploads/${file.filename}`);
     
     // Update the blog with new media files
-    blog.media = blog.media ? [...blog.media, ...filePaths] : filePaths;
+    blogDoc.media = blogDoc.media ? [...blogDoc.media, ...filePaths] : filePaths;
     
-    return blog.save();
+    // Save the document
+    await blogDoc.save();
+    
+    // Retrieve the updated document with populated fields
+    return this.findOne(id);
   }
 
   // Update a blog by ID
-  async update(id: string, updateBlogDto: UpdateBlogDto): Promise<Blog> {
+  async update(id: string, updateBlogDto: UpdateBlogDto): Promise<any> {
     const updatedBlog = await this.blogModel
       .findByIdAndUpdate(id, updateBlogDto, { new: true, runValidators: true })
       .populate('author', 'username email -_id')
       .exec();
+      
     if (!updatedBlog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
     }
-    return updatedBlog;
+    
+    return this.transformBlogMedia(updatedBlog);
   }
 
   // Delete a blog by ID
-  async remove(id: string): Promise<Blog> {
+  async remove(id: string): Promise<any> {
     const deletedBlog = await this.blogModel.findByIdAndDelete(id)
       .populate('author', 'username email -_id')
       .exec();
+      
     if (!deletedBlog) {
       throw new NotFoundException(`Blog with ID "${id}" not found`);
     }
-    return deletedBlog;
+    
+    return this.transformBlogMedia(deletedBlog);
   }
 }
