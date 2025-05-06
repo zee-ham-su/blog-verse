@@ -6,15 +6,24 @@ import { ConfigService } from '@nestjs/config';
 import mongoose from 'mongoose';
 import { join } from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import { CsrfExceptionFilter } from './utils/csrf-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const configService = app.get(ConfigService);
 
   // Enable CORS
-  app.enableCors();
+  app.enableCors({
+    origin: configService.get('CORS_ORIGIN') || true,
+    credentials: true, // Important for cookies (CSRF)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
+  });
   app.setGlobalPrefix('api/v1');
-  app.useGlobalFilters();
+  
+  // Use the CSRF exception filter for better error messages
+  app.useGlobalFilters(new CsrfExceptionFilter());
+  
   app.useGlobalInterceptors();
   
   // Serve static files from uploads directory

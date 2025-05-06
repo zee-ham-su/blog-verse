@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, NestModule, MiddlewareConsumer, RequestMethod } from '@nestjs/common';
 import { CacheInterceptor } from '@nestjs/cache-manager';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -9,6 +9,8 @@ import { AuthModule } from './auth/auth.module';
 import { CommentsModule } from './comments/comments.module';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { CsrfMiddleware } from './utils/csrf.middleware';
+import * as cookieParser from 'cookie-parser';
 
 @Module({
   imports: [
@@ -47,4 +49,15 @@ import { ThrottlerModule } from '@nestjs/throttler';
     },
   ],
 })
-export class AppModule { }
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    // Apply cookie-parser middleware globally
+    consumer.apply(cookieParser()).forRoutes('*');
+    
+    // Apply CSRF protection middleware globally - the middleware itself will decide
+    // which routes to protect based on its internal logic
+    consumer
+      .apply(CsrfMiddleware)
+      .forRoutes('*');
+  }
+}

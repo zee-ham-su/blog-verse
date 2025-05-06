@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, Param, UseGuards, Request, Patch, Delete, UnauthorizedException, NotFoundException } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, UseGuards, Request, Patch, Delete, UnauthorizedException, NotFoundException, Logger } from '@nestjs/common';
 import { Comment } from './entities/comment.entity';
 // import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
@@ -7,14 +7,15 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiBody, ApiBearerAuth } 
 import { UpdateCommentDto } from './dto/update-comment.dto';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
+import { CreateCommentDto } from './dto/create-comment.dto';
 
 @ApiTags('comments')
 @Controller('comments')
 export class CommentsController {
+  private readonly logger = new Logger('CommentsController');
   constructor(private readonly commentsService: CommentsService) { }
 
-  @UseGuards(OptionalJwtAuthGuard, RolesGuard)
-  @Roles('admin', 'reader', 'author')
+  @UseGuards(OptionalJwtAuthGuard)
   @Post(':blogId')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add a new comment to a blog' })
@@ -37,13 +38,28 @@ export class CommentsController {
       required: ['content'],
     },
   })
-  addComment(
+  async addComment(
     @Param('blogId') blogId: string,
     @Body('content') content: string,
     @Request() req,
   ) {
-    const commenterId = req.user ? req.user.userId : null;
-    return this.commentsService.addComment(blogId, commenterId, content);
+    // Debug log the full request user object
+    this.logger.debug(`User object in request: ${JSON.stringify(req.user)}`);
+    
+    // Extract the user ID from the JWT payload
+    // The JWT payload uses 'sub' field which is mapped to 'userId' in JwtStrategy
+    const commentDto = new CreateCommentDto();
+    commentDto.blog = blogId;
+    commentDto.content = content;
+    
+    if (req.user && req.user.userId) {
+      commentDto.commenter = req.user.userId;
+      this.logger.debug(`Setting commenter ID to: ${commentDto.commenter}`);
+    } else {
+      this.logger.debug('No authenticated user, creating anonymous comment');
+    }
+    
+    return this.commentsService.addComment(commentDto);
   }
 
   @Get(':commentId')

@@ -9,10 +9,16 @@ export class Comment extends Document {
     blog: Blog;
 
     @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'User', default: null })
-    commenter: User | null; // Renamed field
+    commenter: User | null;
 
     @Prop({ required: true })
     content: string;
+    
+    @Prop({ default: false })
+    isAnonymous: boolean;
+    
+    @Prop({ default: null })
+    anonymousName: string | null;
 }
 
 export const CommentSchema = SchemaFactory.createForClass(Comment);
